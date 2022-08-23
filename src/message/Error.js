@@ -1,0 +1,19 @@
+const ERROR={
+    BATCHREQUEST:{
+        statusCode:400,
+        message:"BatchRequest"
+    },
+    SERVER:{
+        statusCode:500,
+        message:"ErrorServerSaveDatabase"
+    },
+    PHONENUMBEREXIT:{
+        statusCode:500,
+        message:"PhoneNumberExit"
+    },
+    WRONGPASSWORD:{
+        statusCode:500,
+        message:"WrongPassWorng"
+    }
+}
+module.exports=ERROR;
