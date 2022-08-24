@@ -4,9 +4,6 @@ const ERROR = require('../message/Error');
 const User = require('../models/User');
 const SUCCESS = require('../message/Success');
 class UserController{
-    async get(req,res){
-       return res.status(200).json("success helo word !!!")
-    }
     async register(req,res){
         const {username,password,email,phone}= await req.body;
         if(username && password && email && phone){
@@ -26,6 +23,8 @@ class UserController{
     }
     async login(req,res){
         const {phone,password}= await req.body;
+        console.log(phone)
+        console.log(password)
         if(phone && password){
             const customer=await User.findOne({phone});
             if (!customer) {
@@ -35,13 +34,13 @@ class UserController{
                 return res.status(404).json(ERROR.WRONGPASSWORD);
             }
             console.log(customer);
-            const tokensign = jwt.sign({
+            const accessToken = jwt.sign({
                 id: customer._id,
                 role: customer.role
             }, process.env.JWT_ACCESS_TOKEN,
                 { expiresIn: "365d" }
             );
-            res.cookie("token", tokensign, {
+            res.cookie("accessToken", accessToken, {
                 httpOnly: true,
                 secure: false,
                 path: "/",
@@ -53,7 +52,21 @@ class UserController{
         }
     }
     async get(req,res){
-        
+        const token =await req.headers['authorization'];
+        if(token){
+            const accessToken = token.split(" ")[1];
+            jwt.verify(accessToken, process.env.JWT_ACCESS_TOKEN,async (err, user) => {
+                if (err) {
+                    return res.status(403).json(ERROR.TOKENERROR);
+                }
+                const users=await User.findOne({_id:user.id})
+                return res.status(200).json(users);
+                
+            });
+        }else{
+            return res.status(403).json(ERROR.TOKENISNOTVALUE);
+
+        }
     }
 }
 

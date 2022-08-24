@@ -4,16 +4,24 @@ const ERROR={
         message:"BatchRequest"
     },
     SERVER:{
-        statusCode:500,
+        statusCode:400,
         message:"ErrorServerSaveDatabase"
     },
     PHONENUMBEREXIT:{
-        statusCode:500,
+        statusCode:400,
         message:"PhoneNumberExit"
     },
     WRONGPASSWORD:{
-        statusCode:500,
+        statusCode:400,
         message:"WrongPassWorng"
+    },
+    TOKENISNOTVALUE:{
+        statusCode:403,
+        message:"TokenIsNotValue"
+    },
+    TOKENERROR:{
+        statusCode:403,
+        message:"TokenIsNotError"
     }
 }
 module.exports=ERROR;
