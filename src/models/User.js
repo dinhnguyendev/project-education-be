@@ -1,32 +1,39 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const User = new Schema({
-    username:{
-        type: String,
-        required: true,
+const User = new Schema(
+  {
+    username: {
+      type: String,
+      required: true,
     },
-    password:{
-        type: String,
-        required: true,
+    password: {
+      type: String,
+      required: true,
     },
-    phone:{
-        type: String,
+    phone: {
+      type: String,
     },
-    email:{
-        type: String,
+    email: {
+      type: String,
     },
-    role:{
-        type: String,
-        required: true,
-        default:"user"
+    avatar: {
+      type: String,
+      required: false,
+      default: "https://joeschmoe.io/api/v1/random",
     },
-    wallet:{
-        type:Array,
-        required: false
-    }
-
-},{
-    collection: 'user',
-    timestamps: true
-});
-module.exports = mongoose.model('user', User);
+    role: {
+      type: String,
+      required: true,
+      default: "user",
+    },
+    wallet: {
+      type: Array,
+      required: false,
+    },
+  },
+  {
+    collection: "user",
+    timestamps: true,
+  }
+);
+module.exports = mongoose.model("user", User);

@@ -6,40 +6,45 @@ const SUCCESS = require("../message/Success");
 class UserController {
   async register(req, res) {
     const { username, password, email, phone } = await req.body;
-    if (phone) {
+    if (username && password && email && phone) {
+      const checkEmail = await String(email).match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+      if (!checkEmail) {
+        return res.status(400).json(ERROR.EMAILNOTFOTMAT);
+      }
       const Exist = await User.findOne({ phone });
+
       if (Exist) {
         return res.status(400).json(ERROR.PHONEISEXIST);
+      } else {
+        const salt = await bcrypt.genSalt(10);
+        console.log(salt);
+        const hashed = await bcrypt.hash(password, salt);
+        const data = await new User({
+          username,
+          password: hashed,
+          phone,
+          email,
+        });
+        const result = await data.save();
+        if (result) return res.status(200).json(SUCCESS.REGISTER);
       }
-    }
-    if (username && password && email) {
-      // const salt = await bcrypt.genSalt(10);
-      // const hashed = await bcrypt.hash(password, salt);
-      const data = await new User({
-        username,
-        password,
-        phone,
-        email,
-      });
-      const result = await data.save();
-      return res.status(200).json(result);
     } else {
       return res.status(400).json(ERROR.BATCHREQUEST);
     }
   }
   async login(req, res) {
     const { phone, password } = await req.body;
-    console.log(phone);
-    console.log(password);
     if (phone && password) {
       const customer = await User.findOne({ phone });
       if (!customer) {
         return res.status(404).json(ERROR.PHONENUMBEREXIT);
       }
-      if (password != customer.password) {
-        return res.status(404).json(ERROR.WRONGPASSWORD);
+      const encodePassword = await bcrypt.compare(password, customer.password);
+      if (!encodePassword) {
+        return res.status(405).json(ERROR.WRONGPASSWORD);
       }
-      console.log(customer);
       const accessToken = jwt.sign(
         {
           id: customer._id,
@@ -49,18 +54,30 @@ class UserController {
         { expiresIn: "365d" }
       );
       res.cookie("accessToken", accessToken, {
-        httpOnly: true,
+        // httpOnly: true,
         secure: false,
         path: "/",
         samesite: "strict",
       });
-      return res.status(200).json(SUCCESS.LOGIN);
+      const respon = {
+        ...SUCCESS.LOGIN,
+        data: {
+          username: customer.username,
+          email: customer.email,
+          role: customer.role,
+          phone: customer.phone,
+          avatar: customer.avatar,
+          _id: customer._id,
+        },
+      };
+      console.log(respon);
+      return res.status(200).json(respon);
     } else {
       return res.status(400).json(ERROR.BATCHREQUEST);
     }
   }
   async get(req, res) {
-    const token = await req.headers["authorization"];
+    const token = await req.headers["Authorization"];
     if (token) {
       const accessToken = token.split(" ")[1];
       jwt.verify(
@@ -77,6 +94,10 @@ class UserController {
     } else {
       return res.status(403).json(ERROR.TOKENISNOTVALUE);
     }
+  }
+  async logout(req, res) {
+    res.clearCookie("accessToken");
+    res.status(200).json(SUCCESS.LOGOUT);
   }
 }
 

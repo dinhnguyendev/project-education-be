@@ -27,5 +27,17 @@ const ERROR = {
     statusCode: 400,
     message: "PhoneIsExist",
   },
+  EMAILNOTFOTMAT: {
+    statusCode: 400,
+    message: "EmailNotFotmat",
+  },
+  PASSWORDERROR: {
+    statusCode: 405,
+    message: "PasswordIsError",
+  },
+  AUTHENTICATION: {
+    statusCode: 403,
+    message: "YouNotAuthentication",
+  },
 };
 module.exports = ERROR;
