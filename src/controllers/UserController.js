@@ -70,14 +70,13 @@ class UserController {
           _id: customer._id,
         },
       };
-      console.log(respon);
       return res.status(200).json(respon);
     } else {
       return res.status(400).json(ERROR.BATCHREQUEST);
     }
   }
   async get(req, res) {
-    const token = await req.headers["Authorization"];
+    const token = await req.headers.authorization;
     if (token) {
       const accessToken = token.split(" ")[1];
       jwt.verify(
