@@ -1,7 +1,14 @@
 const { v4: uuidv4 } = require("uuid");
-const { random_item, listArray, initGameCaro } = require("../until/Until");
+const {
+  random_item,
+  listArray,
+  initGameCaro,
+  checkWin,
+} = require("../until/Until");
 let gameBoard = {};
 let userPlayerList = [];
+const row = 20;
+const col = 20;
 function socketListen(io) {
   io.on("connection", function (socket) {
     console.log("con nguoi ket noi     " + socket.id);
@@ -78,6 +85,7 @@ function socketListen(io) {
         const lengthList = size - 1;
         for (let i = lengthList; i >= 0; i--) {
           let respon = {
+            idRooms: idRooms,
             id: userPlayerList[idRooms][i].id,
             isMyTurn: i == lengthList ? true : false,
             isX: i == lengthList ? true : false,
@@ -99,7 +107,18 @@ function socketListen(io) {
         }
       }
     });
-
+    socket.on("update--check--caro", (data) => {
+      console.log("update--check");
+      gameBoard[data.room][data.y][data.x] = data.isX ? "x" : "o";
+      const isWin = checkWin(gameBoard[data.room], row, col, x, y);
+      if (isWin) {
+        console.log("WINNER: " + data.id);
+      }
+      // console.log("gameBoard");
+      // console.log(gameBoard);
+      // console.log("data");
+      // console.log(data);
+    });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
     });

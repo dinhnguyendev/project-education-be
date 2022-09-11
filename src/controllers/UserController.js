@@ -98,6 +98,15 @@ class UserController {
     res.clearCookie("accessToken");
     res.status(200).json(SUCCESS.LOGOUT);
   }
+  async getUserbyId(req, res) {
+    const id = req.params.id;
+    const users = await User.findOne({ _id: id });
+    if (users) {
+      return res.status(200).json(users);
+    } else {
+      return res.status(400).json(ERROR.BATCHREQUEST);
+    }
+  }
 }
 
 module.exports = new UserController();

@@ -1,4 +1,5 @@
 const { ROW, COL } = require("../constants/contants");
+const { Check } = require("./CaroUntil");
 
 function random_item(items) {
   return items[Math.floor(Math.random() * items.length)];
@@ -16,4 +17,8 @@ function initGameCaro() {
   }
   return data;
 }
-module.exports = { random_item, listArray, initGameCaro };
+function checkWin(gameBoard, row, col, x, y) {
+  return Check(gameBoard, row, col, x, y);
+}
+
+module.exports = { random_item, listArray, initGameCaro, checkWin };
