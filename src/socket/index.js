@@ -9,6 +9,8 @@ let gameBoard = {};
 let userPlayerList = [];
 const row = 20;
 const col = 20;
+// console.log("gameBoard");
+// console.log(gameBoard);
 function socketListen(io) {
   io.on("connection", function (socket) {
     console.log("con nguoi ket noi     " + socket.id);
@@ -67,7 +69,11 @@ function socketListen(io) {
       // console.log(userPlayerList);
       socket.leave("caro");
       socket.join(idRooms);
+      // const idRooms = "idRooms";
+      // console.log(idRooms);
+      // console.log(typeof idRooms);
       gameBoard[idRooms] = initGameCaro();
+      // console.log(gameBoard);
       userPlayerList[idRooms] = userPlayerList[idRooms] || [];
       userPlayerList[idRooms].push({
         id: socket.id,
@@ -77,11 +83,6 @@ function socketListen(io) {
       const size = io.sockets.adapter.rooms.get(idRooms).size;
       console.log(size);
       if (size === 2) {
-        // io.in(idRooms).emit("server--rooms--sucessfylly", {
-        //   id: idRooms,
-        //   players: userPlayerList,
-        // });
-        // userPlayerList = [];
         const lengthList = size - 1;
         for (let i = lengthList; i >= 0; i--) {
           let respon = {
@@ -109,15 +110,27 @@ function socketListen(io) {
     });
     socket.on("update--check--caro", (data) => {
       console.log("update--check");
-      gameBoard[data.room][data.y][data.x] = data.isX ? "x" : "o";
-      const isWin = checkWin(gameBoard[data.room], row, col, x, y);
+      const idRooms = data.room;
+      console.log(data);
+      // console.log(idRooms);
+
+      gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
+      // console.log(gameBoard[`${idRooms}`]);
+      const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
       if (isWin) {
         console.log("WINNER: " + data.id);
       }
-      // console.log("gameBoard");
-      // console.log(gameBoard);
-      // console.log("data");
-      // console.log(data);
+      let responRoom = {
+        x: data.x,
+        y: data.y,
+      };
+      const responPlayer = {
+        room: idRooms,
+        isMyTurn: true,
+        isX: data.isX,
+      };
+      io.in(idRooms).emit("server--update-check", responRoom);
+      // socket.emit("server--update-check--player", responPlayer);
     });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
