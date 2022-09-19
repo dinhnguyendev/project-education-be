@@ -123,14 +123,13 @@ function socketListen(io) {
       let responRoom = {
         x: data.x,
         y: data.y,
-      };
-      const responPlayer = {
-        room: idRooms,
-        isMyTurn: true,
         isX: data.isX,
       };
+      // const responPlayer = {
+      //   isMyTurn: !data.isMyTurn
+      // };
+      // socket.emit("server--watting--check",responPlayer)
       io.in(idRooms).emit("server--update-check", responRoom);
-      // socket.emit("server--update-check--player", responPlayer);
     });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
