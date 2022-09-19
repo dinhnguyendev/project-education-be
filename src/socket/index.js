@@ -124,6 +124,7 @@ function socketListen(io) {
         x: data.x,
         y: data.y,
         isX: data.isX,
+        phone: data.phone,
       };
       // const responPlayer = {
       //   isMyTurn: !data.isMyTurn
