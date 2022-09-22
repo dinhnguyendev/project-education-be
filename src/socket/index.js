@@ -7,6 +7,7 @@ const {
 } = require("../until/Until");
 let gameBoard = {};
 let userPlayerList = [];
+let chatRoomCaro = {};
 const row = 20;
 const col = 20;
 // console.log("gameBoard");
@@ -43,6 +44,7 @@ function socketListen(io) {
       const size = io.sockets.adapter.rooms.get("caro").size;
       if (size >= 2) {
         const idRooms = uuidv4();
+        // const idRoomsChat = uuidv4();
         const roomsFirst = socket.adapter.rooms.get("caro");
         const userListFirst = listArray(roomsFirst);
         // const user1 = random_item(userListFirst);
@@ -58,8 +60,6 @@ function socketListen(io) {
         // console.log(userListFirst);
         const user1 = userListFirst[0];
         const user2 = userListFirst[1];
-        console.log("user1" + user1);
-        console.log("user2" + user2);
         io.to(`${user1}`).to(`${user2}`).emit("server--join--rooms", idRooms);
       }
     });
@@ -73,6 +73,7 @@ function socketListen(io) {
       // console.log(idRooms);
       // console.log(typeof idRooms);
       gameBoard[idRooms] = initGameCaro();
+      chatRoomCaro[idRooms] = [];
       // console.log(gameBoard);
       userPlayerList[idRooms] = userPlayerList[idRooms] || [];
       userPlayerList[idRooms].push({
@@ -131,6 +132,20 @@ function socketListen(io) {
       // };
       // socket.emit("server--watting--check",responPlayer)
       io.in(idRooms).emit("server--update-check", responRoom);
+    });
+    socket.on("server--chat-room-caro", (data) => {
+      const values = data.values;
+      const message = {
+        phone: data.phone,
+        values,
+        username: data.username,
+        avatar: data.avatar,
+      };
+      chatRoomCaro[data.idRooms].push(message);
+      io.in(data.idRooms).emit(
+        "server--chat--caro--message",
+        chatRoomCaro[data.idRooms]
+      );
     });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
