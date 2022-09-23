@@ -147,6 +147,18 @@ function socketListen(io) {
         chatRoomCaro[data.idRooms]
       );
     });
+    socket.on("client--chat-room-caro--typing", (data) => {
+      io.in(data.idRooms).emit(
+        "server--chat--caro--typing",
+        data
+      );
+    });
+    socket.on("client--chat-room-caro--off-typing", (data) => {
+      io.in(data.idRooms).emit(
+        "server--chat--caro--off-typing",
+        data
+      );
+    });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
     });
