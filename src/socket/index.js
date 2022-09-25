@@ -10,6 +10,8 @@ let userPlayerList = [];
 let chatRoomCaro = {};
 const row = 20;
 const col = 20;
+let timer = {};
+let currentTimer = {};
 // console.log("gameBoard");
 // console.log(gameBoard);
 function socketListen(io) {
@@ -114,24 +116,53 @@ function socketListen(io) {
       const idRooms = data.room;
       console.log(data);
       // console.log(idRooms);
-
-      gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
-      // console.log(gameBoard[`${idRooms}`]);
-      const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
-      if (isWin) {
-        console.log("WINNER: " + data.id);
+      if (gameBoard[`${idRooms}`][data.y][data.x] == null) {
+        gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
+        const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
+        if (isWin) {
+          console.log("WINNER: " + data.id);
+        }
+        let responRoom = {
+          x: data.x,
+          y: data.y,
+          isX: data.isX,
+          phone: data.phone,
+        };
+        io.in(idRooms).emit("server--update-check", responRoom);
+        const phone = data.phone;
+        io.in(idRooms).emit("server--timer-IsSuccess", {
+          isBoolean: true,
+          phone,
+          room: idRooms,
+        });
+      } else {
+        const data = "Ô đã được đánh !";
+        socket.emit("server--notification-message", data);
       }
-      let responRoom = {
-        x: data.x,
-        y: data.y,
-        isX: data.isX,
-        phone: data.phone,
-      };
-      // const responPlayer = {
-      //   isMyTurn: !data.isMyTurn
-      // };
-      // socket.emit("server--watting--check",responPlayer)
-      io.in(idRooms).emit("server--update-check", responRoom);
+    });
+    socket.on("client--timer-update", (data) => {
+      const idRooms = data.room;
+      if (!timer[idRooms]) {
+        console.log("timer[idRooms] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>..");
+        timer[idRooms] = {
+          currenInterval: null,
+        };
+      }
+      currentTimer[idRooms] = 20;
+      console.log("timer[idRooms].count");
+      console.log(currentTimer[idRooms]);
+      clearInterval(timer[idRooms].currenInterval);
+      timer[idRooms].currenInterval = setInterval(() => {
+        currentTimer[idRooms]--;
+        io.in(idRooms).emit("server--time--watting", currentTimer[idRooms]);
+        // console.log("timer");
+        // console.log(currentTimer[idRooms]);
+        if (currentTimer[idRooms] == 0) {
+          clearInterval(timer[idRooms].currenInterval);
+          currentTimer[idRooms] = 20;
+          io.in(idRooms).emit("server--watting--end", data.phone);
+        }
+      }, 1000);
     });
     socket.on("server--chat-room-caro", (data) => {
       const values = data.values;
@@ -148,16 +179,10 @@ function socketListen(io) {
       );
     });
     socket.on("client--chat-room-caro--typing", (data) => {
-      io.in(data.idRooms).emit(
-        "server--chat--caro--typing",
-        data
-      );
+      io.in(data.idRooms).emit("server--chat--caro--typing", data);
     });
     socket.on("client--chat-room-caro--off-typing", (data) => {
-      io.in(data.idRooms).emit(
-        "server--chat--caro--off-typing",
-        data
-      );
+      io.in(data.idRooms).emit("server--chat--caro--off-typing", data);
     });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
