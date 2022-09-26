@@ -23,49 +23,42 @@ function socketListen(io) {
       io.sockets.emit("server", data + " 8888   ");
     });
     socket.on("join-room", async (data) => {
-      // data,decoded,socketId
-      // const isRoomsExits = io.sockets.adapter.rooms.get("caro");
-      // if (isRoomsExits) {
-      //   const rooms = socket.adapter.rooms.get("caro");
-      //   const userList = listArray(rooms);
-      //   console.log(userList);
-      //   const isExits = userList.includes(socket.decoded.id);
-      //   console.log("isExits");
-      //   console.log(isExits);
-      //   if (isExits) {
-      //     return io.sockets.emit(
-      //       "server--handle--error",
-      //       "tai khoan da dang duoc ket nois"
-      //     );
-      //   }
-      // } else {
-      // }
-
-      socket.join("caro");
-      socket.datas = data;
-      const size = io.sockets.adapter.rooms.get("caro").size;
-      if (size >= 2) {
-        const idRooms = uuidv4();
-        // const idRoomsChat = uuidv4();
-        const roomsFirst = socket.adapter.rooms.get("caro");
-        const userListFirst = listArray(roomsFirst);
-        // const user1 = random_item(userListFirst);
-        // const roomsLast = socket.adapter.rooms.get("caro");
-        // const userListLast = listArray(roomsLast);
-        // const user2 = random_item(userListLast);
-        // while (user1 === user2) {
-        //   const roomsLast = socket.adapter.rooms.get("caro");
-        //   const userListLast = listArray(roomsLast);
-        //   const user2 = random_item(userListLast);
-        //   if (user1 != user2) break;
-        // }
-        // console.log(userListFirst);
-        const user1 = userListFirst[0];
-        const user2 = userListFirst[1];
-        io.to(`${user1}`).to(`${user2}`).emit("server--join--rooms", idRooms);
+        console.log(data);
+        console.log("data");
+      if (data.coin) {
+        socket.join("caro"+ data.coin);
+        socket.datas = data;
+        const size = io.sockets.adapter.rooms.get("caro"+data.coin).size;
+        if (size >= 2) {
+          const idRooms = uuidv4();
+          // const idRoomsChat = uuidv4();
+          const roomsFirst = socket.adapter.rooms.get("caro"+data.coin);
+          const userListFirst = listArray(roomsFirst);
+          // const user1 = random_item(userListFirst);
+          // const roomsLast = socket.adapter.rooms.get("caro");
+          // const userListLast = listArray(roomsLast);
+          // const user2 = random_item(userListLast);
+          // while (user1 === user2) {
+          //   const roomsLast = socket.adapter.rooms.get("caro");
+          //   const userListLast = listArray(roomsLast);
+          //   const user2 = random_item(userListLast);
+          //   if (user1 != user2) break;
+          // }
+          // console.log(userListFirst);
+          const user1 = userListFirst[0];
+          const user2 = userListFirst[1];
+          const respon = {
+            idRooms,
+            coin:data.coin
+          }
+          io.to(`${user1}`).to(`${user2}`).emit("server--join--rooms", respon);
+        }
+      } else {
+        console.log("chon coin >>>>>>>");
       }
     });
-    socket.on("client--leave-room-caro", (idRooms) => {
+    socket.on("client--leave-room-caro", (data) => {
+      const idRooms=data.idRooms
       const players = socket.players;
       // userPlayerList.push(players);
       // console.log(userPlayerList);
@@ -93,6 +86,8 @@ function socketListen(io) {
             id: userPlayerList[idRooms][i].id,
             isMyTurn: i == lengthList ? true : false,
             isX: i == lengthList ? true : false,
+            coin:data.coin,
+            totalCoin:data.coin*2,
             opponent:
               i == lengthList
                 ? userPlayerList[idRooms][lengthList - 1].id
@@ -143,20 +138,16 @@ function socketListen(io) {
     socket.on("client--timer-update", (data) => {
       const idRooms = data.room;
       if (!timer[idRooms]) {
-        console.log("timer[idRooms] >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>..");
+       
         timer[idRooms] = {
           currenInterval: null,
         };
       }
       currentTimer[idRooms] = 20;
-      console.log("timer[idRooms].count");
-      console.log(currentTimer[idRooms]);
       clearInterval(timer[idRooms].currenInterval);
       timer[idRooms].currenInterval = setInterval(() => {
         currentTimer[idRooms]--;
         io.in(idRooms).emit("server--time--watting", currentTimer[idRooms]);
-        // console.log("timer");
-        // console.log(currentTimer[idRooms]);
         if (currentTimer[idRooms] == 0) {
           clearInterval(timer[idRooms].currenInterval);
           currentTimer[idRooms] = 20;
