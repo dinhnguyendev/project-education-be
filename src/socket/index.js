@@ -60,13 +60,8 @@ function socketListen(io) {
     socket.on("client--leave-room-caro", (data) => {
       const idRooms=data.idRooms
       const players = socket.players;
-      // userPlayerList.push(players);
-      // console.log(userPlayerList);
-      socket.leave("caro");
+      socket.leave("caro"+data.coin);
       socket.join(idRooms);
-      // const idRooms = "idRooms";
-      // console.log(idRooms);
-      // console.log(typeof idRooms);
       gameBoard[idRooms] = initGameCaro();
       chatRoomCaro[idRooms] = [];
       // console.log(gameBoard);
@@ -168,6 +163,10 @@ function socketListen(io) {
         "server--chat--caro--message",
         chatRoomCaro[data.idRooms]
       );
+    });
+    socket.on("client--leave--room", (coin) => {
+      console.log("leave rom");
+      socket.leave("caro"+coin);
     });
     socket.on("client--chat-room-caro--typing", (data) => {
       io.in(data.idRooms).emit("server--chat--caro--typing", data);
