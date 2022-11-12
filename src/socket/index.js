@@ -11,15 +11,13 @@ let chatRoomCaro = {};
 const row = 20;
 const col = 20;
 let timer = {};
+
 let currentTimer = {};
-// console.log("gameBoard");
-// console.log(gameBoard);
 function socketListen(io) {
   io.on("connection", function (socket) {
     console.log("con nguoi ket noi     " + socket.id);
     // console.log(socket.players);
     socket.on("client", (data) => {
-      console.log(data);
       io.sockets.emit("server", data + " 8888   ");
     });
     socket.on("join-room", async (data) => {
@@ -31,20 +29,8 @@ function socketListen(io) {
         const size = io.sockets.adapter.rooms.get("caro"+data.coin).size;
         if (size >= 2) {
           const idRooms = uuidv4();
-          // const idRoomsChat = uuidv4();
           const roomsFirst = socket.adapter.rooms.get("caro"+data.coin);
           const userListFirst = listArray(roomsFirst);
-          // const user1 = random_item(userListFirst);
-          // const roomsLast = socket.adapter.rooms.get("caro");
-          // const userListLast = listArray(roomsLast);
-          // const user2 = random_item(userListLast);
-          // while (user1 === user2) {
-          //   const roomsLast = socket.adapter.rooms.get("caro");
-          //   const userListLast = listArray(roomsLast);
-          //   const user2 = random_item(userListLast);
-          //   if (user1 != user2) break;
-          // }
-          // console.log(userListFirst);
           const user1 = userListFirst[0];
           const user2 = userListFirst[1];
           const respon = {
@@ -58,6 +44,7 @@ function socketListen(io) {
       }
     });
     socket.on("client--leave-room-caro", (data) => {
+      console.log("do phong rooms");
       const idRooms=data.idRooms
       const players = socket.players;
       socket.leave("caro"+data.coin);
@@ -168,14 +155,56 @@ function socketListen(io) {
       console.log("leave rom");
       socket.leave("caro"+coin);
     });
+    socket.on("client--leave--room--error", (data) => {
+      console.log("leave rom"+data.idRooms);
+      socket.leave(data.idRooms);
+    });
     socket.on("client--chat-room-caro--typing", (data) => {
       io.in(data.idRooms).emit("server--chat--caro--typing", data);
     });
     socket.on("client--chat-room-caro--off-typing", (data) => {
       io.in(data.idRooms).emit("server--chat--caro--off-typing", data);
     });
+    socket.on("client-transfer-token--error", data => {
+      if (data) {
+        io.in(data.idRooms).emit("server--transfer-error", data);
+      }
+    })
+
+    //turtle
+    let idTimerTurtle;
+    let TimmerTurtle=3;
+    let idTimerTurtleDelay;
+    let TimmerDelay=6;
+    socket.on("join--room-turtle", () => {
+      console.log("join--room-turtle");
+      socket.join("turtle");
+    })
+    socket.on("turtle-start", () => {
+      idTimerTurtle = setInterval(() => {
+        const curentTimer = TimmerTurtle--;
+        io.in("turtle").emit("server--turtle--watting", curentTimer);
+        if (curentTimer == 0) {
+          clearInterval(idTimerTurtle);
+          TimmerTurtle = 3;
+        }
+      }, 1000);
+    })
+    socket.on("turtle-delay", () => {
+      idTimerTurtleDelay = setInterval(() => {
+         TimmerDelay = TimmerDelay - 1;
+        io.in("turtle").emit("server--turtle--run--timer", TimmerDelay);
+        if (TimmerDelay == 0) {
+          clearInterval(idTimerTurtleDelay);
+          TimmerDelay = 6;
+        }
+      }, 1000);
+    })
+    socket.on("turtle-run-game", () => {
+      socket.emit("turtle-next");
+    })
     socket.on("disconnect", () => {
-      console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!!");
+      console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!! "+  socket.id);
     });
   });
 }
