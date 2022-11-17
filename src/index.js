@@ -12,23 +12,20 @@ const User = require("./models/User");
 dotenv.config();
 app.use(express.json());
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "http://localhost:3006",
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 app.use(express.static("public"));
-app.use(
-  "/scripts",
-  express.static(__dirname + "../node_modules/web3.js-browser/build/")
-);
+app.use("/scripts", express.static(__dirname + "../node_modules/web3.js-browser/build/"));
 const http = require("http");
 const { Server } = require("socket.io");
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "http://localhost:3006",
 
     methods: ["GET", "POST"],
   },

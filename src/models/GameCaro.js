@@ -6,27 +6,23 @@ const GameCaro = new Schema(
       type: String,
       required: true,
     },
-    total: {
+    totalCoin: {
       type: Number,
       required: true,
     },
-    bet: {
+    coin: {
       type: String,
       required: true,
     },
-    infor: [
-      {
-        id: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "user",
-          required: true,
-        },
-        addressWallet: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
+    idUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
+    addressWallet: {
+      type: String,
+      required: true,
+    },
     winner: {
       id: {
         type: String,

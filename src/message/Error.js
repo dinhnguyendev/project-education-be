@@ -39,5 +39,9 @@ const ERROR = {
     statusCode: 403,
     message: "YouNotAuthentication",
   },
+  VALUEEMPTY: {
+    statusCode: 400,
+    message: "ValueEmpty",
+  },
 };
 module.exports = ERROR;
