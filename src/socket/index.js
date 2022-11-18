@@ -12,7 +12,18 @@ const currentCheckSendToken = {};
 let currentTimer = {};
 function socketListen(io) {
   io.on("connection", function (socket) {
-    console.log("con nguoi ket noi     " + socket.id);
+    console.log("con nguoi ket noi     " + io.engine.clientsCount);
+    const numberConect = io.engine.clientsCount;
+    socket.broadcast.emit("server--connection--count", numberConect);
+    socket.on("client--check--connection--count", () => {
+      const numberConect = io.engine.clientsCount;
+      console.log("dooodasdjhasdjadsjahdj");
+      console.log(numberConect);
+      socket.broadcast.emit("server--connection--count", numberConect);
+    });
+    socket.on("reconnect", () => {
+      console.log("reconnect");
+    });
     // console.log(socket.players);
     socket.on("client", (data) => {
       io.sockets.emit("server", data + " 8888   ");
@@ -178,6 +189,20 @@ function socketListen(io) {
     socket.on("join--room-turtle", () => {
       console.log("join--room-turtle");
       socket.join("turtle");
+      if (io.sockets.adapter.rooms.get("turtle")) {
+        const size = io.sockets.adapter.rooms.get("turtle").size;
+        socket.broadcast.emit("server--connection--count--turtle", size);
+      } else {
+        socket.broadcast.emit("server--connection--count--turtle", 0);
+      }
+    });
+    socket.on("client--check--connection--count--turtle", () => {
+      if (io.sockets.adapter.rooms.get("turtle")) {
+        const size = io.sockets.adapter.rooms.get("turtle").size;
+        socket.broadcast.emit("server--connection--count--turtle", size);
+      } else {
+        socket.broadcast.emit("server--connection--count--turtle", 0);
+      }
     });
 
     socket.on("turtle-start", () => {
@@ -205,6 +230,14 @@ function socketListen(io) {
     });
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!! " + socket.id);
+      if (io.sockets.adapter.rooms.get("turtle")) {
+        const size = io.sockets.adapter.rooms.get("turtle").size;
+        socket.broadcast.emit("server--connection--count--turtle", size);
+      } else {
+        socket.broadcast.emit("server--connection--count--turtle", 0);
+      }
+      const number = io.engine.clientsCount;
+      socket.broadcast.emit("server--connection--count", number);
     });
   });
 }
