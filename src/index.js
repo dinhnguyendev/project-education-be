@@ -48,7 +48,8 @@ io.use((socket, next) => {
       // next(new Error("Authentication error"));
     });
   } else {
-    return res.status(403).json(ERROR.TOKENISNOTVALUE);
+    next();
+    // return res.status(403).json(ERROR.TOKENISNOTVALUE);
   }
 });
 database.connect();
