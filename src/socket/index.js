@@ -2,6 +2,10 @@ const { v4: uuidv4 } = require("uuid");
 const { random_item, listArray, initGameCaro, checkWin } = require("../until/Until");
 const _ = require("lodash");
 const { createGamesCaro } = require("../until/CaroGames");
+const { createContractPeerGames } = require("../until/contract");
+const Web3 = require("web3");
+const { BLOCKCHAIN } = require("../constants/contants");
+var Tx = require("ethereumjs-tx").Transaction;
 let gameBoard = {};
 let userPlayerList = [];
 let chatRoomCaro = {};
@@ -90,13 +94,13 @@ function socketListen(io) {
     });
     socket.on("update--check--caro", (data) => {
       const idRooms = data.room;
-      console.log(data);
       // console.log(idRooms);
       if (gameBoard[`${idRooms}`][data.y][data.x] == null) {
         gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
         const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
         if (isWin) {
           console.log("WINNER: " + data.id);
+          console.log(data);
         }
         let responRoom = {
           x: data.x,
@@ -162,6 +166,73 @@ function socketListen(io) {
       if (data) {
         io.in(data.idRooms).emit("server--transfer-error", data);
       }
+    });
+    socket.on("server-transfer-token--automation", async () => {
+      console.log("server-transfer-token--automation");
+      const abi = BLOCKCHAIN.ABI;
+      const addressSM = BLOCKCHAIN.ADDRESS__SM__PEER;
+      // const privateKey = "d593ca8e89c4b870938d7107ee53dcbb8cfe3667ef0861cc771163fb193cb8f5"
+
+      const web3 = new Web3(
+        new Web3.providers.WebsocketProvider(
+          "wss://goerli.infura.io/ws/v3/b1706c239ae04b86a36b141b34796c73"
+        )
+      );
+     
+      web3.eth.accounts.wallet.add("d593ca8e89c4b870938d7107ee53dcbb8cfe3667ef0861cc771163fb193cb8f5");
+      const contract = new web3.eth.Contract(abi, addressSM);
+      const privateKey = Buffer.from(
+        "d593ca8e89c4b870938d7107ee53dcbb8cfe3667ef0861cc771163fb193cb8f5",
+        "hex"
+        );
+        // web3.eth.defaultChain = 'goerli';
+      // const txsss =contract.methods
+      // .updateAllowancesRecive(
+      //   "0x46F16f01FeF8cd5A60abF783c470e6558aFBDC87"
+      // )
+      // const gas = await txsss.estimateGas({ from: "0x78E02ebEed978b82B4479a765D0c7f579f25ee38" })
+      // const gasPrice = await web3.eth.getGasPrice();
+      // const data = txsss.encodeABI();
+      const nonce = await web3.eth.getTransactionCount("0x78E02ebEed978b82B4479a765D0c7f579f25ee38");
+      const accountNonce =
+  '0x' +(+nonce +1).toString(16)
+      var txParams = {
+        from: "0x78E02ebEed978b82B4479a765D0c7f579f25ee38",
+        to: "0x6C26557f69A7bb7ea4834376c1669F57eFA26555",
+        data: contract.methods
+        .updateAllowancesRecive(
+          "0x46F16f01FeF8cd5A60abF783c470e6558aFBDC87"
+        ).encodeABI(),
+        gas: 30000,
+        nonce: accountNonce,
+
+       
+      };
+      const tx = new Tx(txParams,{'chain':'goerli'});
+      tx.sign(privateKey);
+      const serializedTx = tx.serialize();
+      console.log("0x" + serializedTx.toString("hex"));
+      // const res = await web3.eth.accounts.signTransaction(txParams, privateKey);
+      console.log(accountNonce);
+      console.log(`Old data value: ${await contract.methods.balanceOf("0x78E02ebEed978b82B4479a765D0c7f579f25ee38").call()}`);
+      // web3.eth
+      //   .sendSignedTransaction(res.rawTransaction)
+      //   .on("receipt", (receipt) => {
+      //     console.log(receipt);
+          
+      //   })
+      //   .on("error", (err) => {
+      //     console.log(err);
+      //   });
+      web3.eth
+        .sendSignedTransaction("0x" + serializedTx.toString("hex"))
+        .on("receipt", (receipt) => {
+          console.log(receipt);
+          
+        })
+        .on("error", (err) => {
+          console.log(err);
+        });
     });
     socket.on("client--send-token-success", (data) => {
       console.log("client--send-token-success");
