@@ -1,7 +1,7 @@
 const ERROR = require("../message/Error");
-const GameCaro = require("../models/GameCaro");
+const GameTurtle = require("../models/GameTurle");
 
-const createGamesCaro = async (data) => {
+const createGamesTurtle = async (data) => {
   const { idRooms, idUser, addressWallet, totalCoin, coin } = data;
   if (idRooms && idUser && addressWallet && totalCoin && coin) {
     const gameData = {
@@ -17,7 +17,7 @@ const createGamesCaro = async (data) => {
     return ERROR.VALUEEMPTY;
   }
 };
-const UpdateWinnerGamesCaro = async (data) => {
+const UpdateWinnerGamesTurtle = async (data) => {
   const { idRooms, idUser, addressWallet, totalCoin, coin } = data;
   if (idRooms && idUser && addressWallet && totalCoin && coin) {
     const GamesItem = await GameCaro.find({

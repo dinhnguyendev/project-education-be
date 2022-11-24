@@ -30,12 +30,7 @@ function CheckColumn(Board, row, column, r, c) {
   let countBottom = 0;
   let top = c - 1;
   let bottom = c + 1;
-  while (
-    top >= 0 &&
-    Board[top][c] == Board[r][c] &&
-    Board[top][c] != null &&
-    Board[r][c] != null
-  ) {
+  while (top >= 0 && Board[top][c] == Board[r][c] && Board[top][c] != null && Board[r][c] != null) {
     countTop++;
     top--;
   }

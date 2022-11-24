@@ -2,14 +2,6 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const GameTurtle = new Schema(
   {
-    // idRooms: {
-    //   type: String,
-    //   required: true,
-    // },
-    // totalCoin: {
-    //   type: Number,
-    //   required: true,
-    // },
     coin: {
       type: String,
       required: true,
@@ -23,16 +15,15 @@ const GameTurtle = new Schema(
       type: String,
       required: true,
     },
-    winner: [
-        {
-            id: {
-                  type: String,
-            },
-            addressWallet: {
-                  type: String,
-            },
-        },
-    ]
+    bet: {
+      type: String,
+      required: true,
+    },
+    winnerBet: {
+      type: String,
+      required: false,
+      default: "",
+    },
   },
   {
     collection: "gameturtle",

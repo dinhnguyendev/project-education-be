@@ -26,9 +26,11 @@ const GameCaro = new Schema(
     winner: {
       id: {
         type: String,
+        default: "",
       },
       addressWallet: {
         type: String,
+        default: "",
       },
     },
   },
