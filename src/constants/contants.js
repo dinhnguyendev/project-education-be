@@ -618,6 +618,13 @@ const BLOCKCHAIN = {
   ],
   ABI__GAMES__FREE: [
     {
+      inputs: [],
+      name: "claim_TokenXu",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
       inputs: [
         {
           internalType: "address",
@@ -629,16 +636,16 @@ const BLOCKCHAIN = {
       type: "constructor",
     },
     {
-      inputs: [],
-      name: "TOKENXU",
-      outputs: [
+      inputs: [
         {
-          internalType: "contract IERC20",
-          name: "",
-          type: "address",
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
         },
       ],
-      stateMutability: "view",
+      name: "wirthRaw",
+      outputs: [],
+      stateMutability: "nonpayable",
       type: "function",
     },
     {
@@ -682,19 +689,25 @@ const BLOCKCHAIN = {
     },
     {
       inputs: [],
-      name: "claim_TokenXu",
-      outputs: [],
-      stateMutability: "nonpayable",
-      type: "function",
-    },
-    {
-      inputs: [],
       name: "isChecked",
       outputs: [
         {
           internalType: "bool",
           name: "",
           type: "bool",
+        },
+      ],
+      stateMutability: "view",
+      type: "function",
+    },
+    {
+      inputs: [],
+      name: "TOKENXU",
+      outputs: [
+        {
+          internalType: "contract IERC20",
+          name: "",
+          type: "address",
         },
       ],
       stateMutability: "view",
@@ -774,6 +787,24 @@ const BLOCKCHAIN = {
     {
       inputs: [
         {
+          internalType: "address",
+          name: "winner",
+          type: "address",
+        },
+        {
+          internalType: "uint256",
+          name: "amount",
+          type: "uint256",
+        },
+      ],
+      name: "transferWinner",
+      outputs: [],
+      stateMutability: "payable",
+      type: "function",
+    },
+    {
+      inputs: [
+        {
           internalType: "uint256",
           name: "amount",
           type: "uint256",
@@ -786,11 +817,11 @@ const BLOCKCHAIN = {
     },
   ],
   ADDRESSSM: "",
-  ADDRESS__SM__PEER: "0x0bFC00b850AB0f8A8d8e1B1D1E425063402bd77B",
+  ADDRESS__SM__PEER: "0xd798600616f0e9DB156a887619A4188E6a0CBEA5",
   ADDRESS__SM__FREE: "0xcF3E1Ee52863e71D8A18e5dff5E44A542c20b802",
   ADDRESS__SM__GAMES: "0x1a5a0DBc63F29ac97Eda034739AC319a7c67243c",
-  ADDRESS__SM__GAMES__TURTLE: "0x1Df1316E5Fe49Bd5aCe670cB0EB5D4a2d5f3d71F",
+  ADDRESS__SM__GAMES__TURTLE: "0x306d29cE836C83699A2BF49859Bd06e786d119F3",
   ADDRESS_CONTRACT_RECEIVE: "0x906A717Bd3A8ce16Be5Cae78d71994f667Cd09a5",
-  ADDRESS_ADMIN: "0x78E02ebEed978b82B4479a765D0c7f579f25ee38",
+  ADDRESS_ADMIN: "0x1aD4f733F54758e5386cECa1DC3c310C175d2AA6",
 };
 module.exports = { ROW, COL, BLOCKCHAIN };

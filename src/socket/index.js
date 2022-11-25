@@ -6,15 +6,50 @@ const { createContractPeerGames } = require("../until/contract");
 const Web3 = require("web3");
 const { BLOCKCHAIN } = require("../constants/contants");
 const { handleWinnerToken } = require("../until/handleWinner");
+const { cloneDeep } = require("lodash");
 var Tx = require("ethereumjs-tx").Transaction;
 let gameBoard = {};
 let userPlayerList = [];
 let chatRoomCaro = {};
-const row = 20;
-const col = 20;
+const row = 50;
+const col = 50;
 let timer = {};
 const currentCheckSendToken = {};
 let currentTimer = {};
+
+//turtle
+let idTimerTurtle = {};
+let winner = {};
+let idTimerTurtleDelay = {};
+let TimmerTurtle = {};
+let TimmerDelay = {};
+const ListRooms = [];
+const idRoomsTurtle = {
+  status: false,
+  idRooms: "",
+};
+const minCurrent = 5;
+const maxCurrent = 30;
+const timerEnd = 10;
+const currentD = 1070;
+const currentDHidden = 1200;
+const handleCreateRoomsTurtle = () => {
+  idRoomsTurtle.idRooms = uuidv4();
+  idRoomsTurtle.status = true;
+  TimmerTurtle[idRoomsTurtle?.idRooms] = 25;
+  idTimerTurtle[idRoomsTurtle?.idRooms] = "";
+  winner[idRoomsTurtle?.idRooms] = {
+    WIN_I: null,
+    WIN_II: null,
+    WIN_III: null,
+  };
+};
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function socketListen(io) {
   io.on("connection", function (socket) {
     console.log("con nguoi ket noi     " + io.engine.clientsCount);
@@ -123,7 +158,6 @@ function socketListen(io) {
               coinWinner: amount,
             };
             io.in(data.idRooms).emit("server--winner--game-caro", res);
-            console.log(amount);
             handleWinnerToken(
               BLOCKCHAIN.ABI__GAMES__CARO,
               BLOCKCHAIN.ADDRESS__SM__GAMES,
@@ -195,7 +229,7 @@ function socketListen(io) {
     });
     socket.on("client--send-token-success", (data) => {
       console.log("client--send-token-success");
-      // console.log(data);
+
       const isCheckSend = _.get(currentCheckSendToken, data.idRooms);
       if (isCheckSend) {
         currentCheckSendToken[data.idRooms].push(data);
@@ -207,27 +241,61 @@ function socketListen(io) {
         currentCheckSendToken[data.idRooms].push(data);
         createGamesCaro(data);
       }
-      console.log(currentCheckSendToken);
     });
+    const handleTurtleStartTimerGames = (curentId, timmerStart, game) => {
+      curentId = setInterval(() => {
+        const curentTimer = timmerStart--;
+        io.in(game?.idRooms).emit("server--turtle--watting", curentTimer);
+        if (curentTimer == 20) {
+          const items = cloneDeep(game);
+          handleTurtleDelayDisable(items);
+          ListRooms.push(game);
+          idRoomsTurtle.idRooms = "";
+          idRoomsTurtle.status = false;
+        }
+        if (curentTimer == 0) {
+          clearInterval(curentId);
+        }
+      }, 1000);
+    };
+    const handleTurtleDelayDisable = (game) => {
+      let numbers = 20;
+      let curentId = setInterval(() => {
+        let curentTimer = numbers--;
 
-    //turtle
-    let idTimerTurtle;
-    let TimmerTurtle = 3;
-    let idTimerTurtleDelay;
-    let TimmerDelay = 6;
-    let idRoomsTurtle;
+        io.in(game?.idRooms).emit("server--turtle--watting", curentTimer);
+        io.in(game?.idRooms).emit("server--turtle--idrooms", game);
+        if (curentTimer == 0) {
+          clearInterval(curentId);
+          handleDelayRun(game);
+        }
+      }, 1000);
+    };
+
     socket.on("join--room-turtle", () => {
       console.log("join--room-turtle");
-      socket.join("turtle");
+      console.log(ListRooms);
       console.log(idRoomsTurtle);
-      socket.emit("server--join--room-uid", idRoomsTurtle);
-
-      if (io.sockets.adapter.rooms.get("turtle")) {
-        const size = io.sockets.adapter.rooms.get("turtle").size;
-        socket.broadcast.emit("server--connection--count--turtle", size);
+      const idRooms = idRoomsTurtle.idRooms;
+      const status = idRoomsTurtle.status;
+      if (status && idRooms) {
+        socket.join(idRooms);
       } else {
-        socket.broadcast.emit("server--connection--count--turtle", 0);
+        console.log("create rooms ");
+        handleCreateRoomsTurtle();
+        socket.join(idRoomsTurtle.idRooms);
+        handleTurtleStartTimerGames(
+          idTimerTurtle[idRoomsTurtle.idRooms],
+          TimmerTurtle[idRoomsTurtle?.idRooms],
+          idRoomsTurtle
+        );
       }
+      // if (io.sockets.adapter.rooms.get("turtle")) {
+      //   const size = io.sockets.adapter.rooms.get("turtle").size;
+      //   socket.broadcast.emit("server--connection--count--turtle", size);
+      // } else {
+      //   socket.broadcast.emit("server--connection--count--turtle", 0);
+      // }
     });
     socket.on("client--check--connection--count--turtle", () => {
       if (io.sockets.adapter.rooms.get("turtle")) {
@@ -239,30 +307,114 @@ function socketListen(io) {
     });
 
     socket.on("turtle-start", () => {
-      idRoomsTurtle = uuidv4();
+      socket.join(idRoomsTurtle?.idRooms);
       console.log(idRoomsTurtle);
-      idTimerTurtle = setInterval(() => {
-        const curentTimer = TimmerTurtle--;
-        io.in("turtle").emit("server--turtle--watting", curentTimer);
+      idTimerTurtle[idRoomsTurtle?.idRooms] = setInterval(() => {
+        const curentTimer = TimmerTurtle[idRoomsTurtle?.idRooms]--;
+        io.in(idRoomsTurtle?.idRooms).emit("server--turtle--watting", curentTimer);
         if (curentTimer == 0) {
           clearInterval(idTimerTurtle);
-          TimmerTurtle = 3;
+          TimmerTurtle[idRoomsTurtle?.idRooms] = 60;
         }
       }, 1000);
     });
-    socket.on("turtle-delay", () => {
-      idTimerTurtleDelay = setInterval(() => {
-        TimmerDelay = TimmerDelay - 1;
-        io.in("turtle").emit("server--turtle--run--timer", TimmerDelay);
-        if (TimmerDelay == 0) {
+
+    const handleDelayRun = (game) => {
+      let number = 10;
+      let idTimerTurtleDelay = setInterval(() => {
+        console.log(game);
+        number = number - 1;
+        io.in(game?.idRooms).emit("server--turtle--run--timer", number);
+        if (number == 0) {
+          handleRunTurtleYellow(game);
+          handleRunTurtlePink(game);
+          handleRunTurtleBlue(game);
           clearInterval(idTimerTurtleDelay);
-          TimmerDelay = 6;
         }
       }, 1000);
-    });
-    socket.on("turtle-run-game", () => {
-      socket.emit("turtle-next");
-    });
+    };
+
+    const handleRunTurtleYellow = (game) => {
+      let responTotal = 0;
+      let idInterval = setInterval(() => {
+        console.log(responTotal);
+        const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
+        responTotal = responTotal + resRunBytimmer;
+        io.in(game?.idRooms).emit("turtle-next--yellow", resRunBytimmer);
+        if (responTotal >= currentD) {
+          if (winner[game.idRooms]) {
+            if (!winner[game?.idRooms].WIN_I) {
+              winner[game?.idRooms].WIN_I = 1;
+            } else if (!winner[game?.idRooms].WIN_II) {
+              winner[game?.idRooms].WIN_II = 1;
+            } else if (!winner[game?.idRooms].WIN_III) {
+              winner[game?.idRooms].WIN_III = 1;
+              const res = {
+                WIN_I: winner[game?.idRooms].WIN_I,
+                WIN_II: winner[game?.idRooms].WIN_II,
+                WIN_III: winner[game?.idRooms].WIN_III,
+              };
+              io.in(game?.idRooms).emit("turtle-winner", res);
+            }
+          }
+          clearInterval(idInterval);
+        }
+      }, [500]);
+    };
+    const handleRunTurtlePink = (game) => {
+      let responTotal = 0;
+      let idInterval = setInterval(() => {
+        console.log(responTotal);
+        const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
+        responTotal = responTotal + resRunBytimmer;
+        io.in(game?.idRooms).emit("turtle-next--pink", resRunBytimmer);
+        if (responTotal >= currentD) {
+          if (winner[game.idRooms]) {
+            if (!winner[game?.idRooms].WIN_I) {
+              winner[game?.idRooms].WIN_I = 2;
+            } else if (!winner[game?.idRooms].WIN_II) {
+              winner[game?.idRooms].WIN_II = 2;
+            } else if (!winner[game?.idRooms].WIN_III) {
+              winner[game?.idRooms].WIN_III = 3;
+              const res = {
+                WIN_I: winner[game?.idRooms].WIN_I,
+                WIN_II: winner[game?.idRooms].WIN_II,
+                WIN_III: winner[game?.idRooms].WIN_III,
+              };
+              io.in(game?.idRooms).emit("turtle-winner", res);
+            }
+          }
+          clearInterval(idInterval);
+        }
+      }, [500]);
+    };
+    const handleRunTurtleBlue = (game) => {
+      let responTotal = 0;
+      let idInterval = setInterval(() => {
+        console.log(responTotal);
+        const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
+        responTotal = responTotal + resRunBytimmer;
+        io.in(game?.idRooms).emit("turtle-next--blue", resRunBytimmer);
+        if (responTotal >= currentD) {
+          if (winner[game.idRooms]) {
+            if (!winner[game?.idRooms].WIN_I) {
+              winner[game?.idRooms].WIN_I = 3;
+            } else if (!winner[game?.idRooms].WIN_II) {
+              winner[game?.idRooms].WIN_II = 3;
+            } else if (!winner[game?.idRooms].WIN_III) {
+              winner[game?.idRooms].WIN_III = 3;
+              const res = {
+                WIN_I: winner[game?.idRooms].WIN_I,
+                WIN_II: winner[game?.idRooms].WIN_II,
+                WIN_III: winner[game?.idRooms].WIN_III,
+              };
+              io.in(game?.idRooms).emit("turtle-winner", res);
+            }
+          }
+          clearInterval(idInterval);
+        }
+      }, [500]);
+    };
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!! " + socket.id);
       if (io.sockets.adapter.rooms.get("turtle")) {

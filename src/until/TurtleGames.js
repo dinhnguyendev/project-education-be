@@ -2,8 +2,8 @@ const ERROR = require("../message/Error");
 const GameTurtle = require("../models/GameTurle");
 
 const createGamesTurtle = async (data) => {
-  const { idRooms, idUser, addressWallet, totalCoin, coin } = data;
-  if (idRooms && idUser && addressWallet && totalCoin && coin) {
+  const { idUser, addressWallet, coin, bet } = data;
+  if (idUser && addressWallet && coin && bet) {
     const gameData = {
       idRooms,
       totalCoin,
@@ -38,4 +38,4 @@ const UpdateWinnerGamesTurtle = async (data) => {
     return false;
   }
 };
-module.exports = { createGamesCaro, UpdateWinnerGamesCaro };
+module.exports = { createGamesTurtle, UpdateWinnerGamesTurtle };
