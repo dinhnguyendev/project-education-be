@@ -5,8 +5,10 @@ const { createGamesCaro, UpdateWinnerGamesCaro } = require("../until/CaroGames")
 const { createContractPeerGames } = require("../until/contract");
 const Web3 = require("web3");
 const { BLOCKCHAIN } = require("../constants/contants");
-const { handleWinnerToken } = require("../until/handleWinner");
-const { cloneDeep } = require("lodash");
+const { handleWinnerToken, handleWinnerTokenTurtle } = require("../until/handleWinner");
+const { cloneDeep, clone } = require("lodash");
+const { UpdateWinnerGamesTurtle } = require("../until/TurtleGames");
+
 var Tx = require("ethereumjs-tx").Transaction;
 let gameBoard = {};
 let userPlayerList = [];
@@ -36,8 +38,8 @@ const currentDHidden = 1200;
 const handleCreateRoomsTurtle = () => {
   idRoomsTurtle.idRooms = uuidv4();
   idRoomsTurtle.status = true;
-  TimmerTurtle[idRoomsTurtle?.idRooms] = 25;
-  idTimerTurtle[idRoomsTurtle?.idRooms] = "";
+  TimmerTurtle[idRoomsTurtle?.idRooms] = 60;
+  idTimerTurtle[idRoomsTurtle?.idRooms] = null;
   winner[idRoomsTurtle?.idRooms] = {
     WIN_I: null,
     WIN_II: null,
@@ -76,11 +78,22 @@ function socketListen(io) {
           const userListFirst = listArray(roomsFirst);
           const user1 = userListFirst[0];
           const user2 = userListFirst[1];
-          const respon = {
-            idRooms,
-            coin: data.coin,
-          };
-          io.to(`${user1}`).to(`${user2}`).emit("server--join--rooms", respon);
+          for (let i = 0; i < userListFirst.length; i++) {
+            for (let j = 1; j < userListFirst.length; j++) {
+              const infor1 = io.sockets.sockets.get(userListFirst[i])?.datas?._id;
+              const infor2 = io.sockets.sockets.get(userListFirst[j])?.datas?._id;
+              if (infor1 !== infor2) {
+                const respon = {
+                  idRooms,
+                  coin: data.coin,
+                };
+                io.to(`${userListFirst[i]}`)
+                  .to(`${userListFirst[j]}`)
+                  .emit("server--join--rooms", respon);
+                return true;
+              }
+            }
+          }
         }
       }
     });
@@ -101,7 +114,6 @@ function socketListen(io) {
         id: socket.id,
         user: players,
       });
-
       const size = io.sockets.adapter.rooms.get(idRooms).size;
 
       if (size === 2) {
@@ -204,6 +216,10 @@ function socketListen(io) {
     socket.on("client--leave--room", (coin) => {
       socket.leave("caro" + coin);
     });
+    socket.on("client--leave--room--by-id", (id) => {
+      console.log("client--leave--room--by-id : " + id);
+      socket.leave(id);
+    });
     socket.on("client--leave--room--error", (data) => {
       socket.leave(data.idRooms);
     });
@@ -242,9 +258,11 @@ function socketListen(io) {
         createGamesCaro(data);
       }
     });
-    const handleTurtleStartTimerGames = (curentId, timmerStart, game) => {
-      curentId = setInterval(() => {
-        const curentTimer = timmerStart--;
+    const handleTurtleStartTimerGames = (game) => {
+      let curentTimer = 60;
+      let curentId = setInterval(() => {
+        curentTimer = curentTimer - 1;
+
         io.in(game?.idRooms).emit("server--turtle--watting", curentTimer);
         if (curentTimer == 20) {
           const items = cloneDeep(game);
@@ -264,10 +282,11 @@ function socketListen(io) {
         let curentTimer = numbers--;
 
         io.in(game?.idRooms).emit("server--turtle--watting", curentTimer);
-        io.in(game?.idRooms).emit("server--turtle--idrooms", game);
+        io.in(game?.idRooms).emit("server--turtle--idrooms", true);
         if (curentTimer == 0) {
           clearInterval(curentId);
-          handleDelayRun(game);
+          const imtemsRun = cloneDeep(game);
+          handleDelayRun(imtemsRun);
         }
       }, 1000);
     };
@@ -280,16 +299,16 @@ function socketListen(io) {
       const status = idRoomsTurtle.status;
       if (status && idRooms) {
         socket.join(idRooms);
+        socket.emit("server--join--room-uid", idRooms);
       } else {
         console.log("create rooms ");
         handleCreateRoomsTurtle();
         socket.join(idRoomsTurtle.idRooms);
-        handleTurtleStartTimerGames(
-          idTimerTurtle[idRoomsTurtle.idRooms],
-          TimmerTurtle[idRoomsTurtle?.idRooms],
-          idRoomsTurtle
-        );
+        socket.emit("server--join--room-uid", idRoomsTurtle.idRooms);
+        const items = cloneDeep(idRoomsTurtle);
+        handleTurtleStartTimerGames(items);
       }
+      socket.emit("server--turtle--idrooms", false);
       // if (io.sockets.adapter.rooms.get("turtle")) {
       //   const size = io.sockets.adapter.rooms.get("turtle").size;
       //   socket.broadcast.emit("server--connection--count--turtle", size);
@@ -307,7 +326,6 @@ function socketListen(io) {
     });
 
     socket.on("turtle-start", () => {
-      socket.join(idRoomsTurtle?.idRooms);
       console.log(idRoomsTurtle);
       idTimerTurtle[idRoomsTurtle?.idRooms] = setInterval(() => {
         const curentTimer = TimmerTurtle[idRoomsTurtle?.idRooms]--;
@@ -318,6 +336,9 @@ function socketListen(io) {
         }
       }, 1000);
     });
+    socket.on("turtle--token--winner", (data) => {
+      handleTranferTokenGameTurtle(data);
+    });
 
     const handleDelayRun = (game) => {
       let number = 10;
@@ -326,19 +347,54 @@ function socketListen(io) {
         number = number - 1;
         io.in(game?.idRooms).emit("server--turtle--run--timer", number);
         if (number == 0) {
-          handleRunTurtleYellow(game);
-          handleRunTurtlePink(game);
-          handleRunTurtleBlue(game);
+          const imtemRunStart = cloneDeep(game);
+          handleRunTurtleYellow(imtemRunStart);
+          handleRunTurtlePink(imtemRunStart);
+          handleRunTurtleBlue(imtemRunStart);
           clearInterval(idTimerTurtleDelay);
         }
       }, 1000);
     };
-
+    const handleTranferTokenGameTurtle = async (data) => {
+      if (data) {
+        console.log("turtle--token--winner");
+        console.log(data);
+        const betWin = data?.WIN_I.toString();
+        const req = {
+          idRooms: data?.idRooms,
+          bet: betWin.trim(),
+        };
+        const res = await UpdateWinnerGamesTurtle(req);
+        if (res) {
+          const winner = res.playersWinner;
+          console.log("turtle--token--winner--res");
+          console.log(res);
+          if (winner) {
+            winner.forEach(async (winners, i) => {
+              const amount = +winners.coin * 2;
+              const idUser = winners.idUser;
+              const addressWallet = winners.addressWallet;
+              console.log("winners items");
+              const teamp = {
+                abi: BLOCKCHAIN.ABI__GAMES__TURTLE,
+                addressSM: BLOCKCHAIN.ADDRESS__SM__GAMES__TURTLE,
+                coin: amount,
+                addreceive: addressWallet,
+                idUser,
+                indexs: i,
+              };
+              const request = cloneDeep(teamp);
+              handleWinnerTokenTurtle(request);
+            });
+          }
+        }
+      }
+    };
     const handleRunTurtleYellow = (game) => {
       let responTotal = 0;
       let idInterval = setInterval(() => {
-        console.log(responTotal);
         const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
+        console.log("turtle-next--yellow---------------" + resRunBytimmer);
         responTotal = responTotal + resRunBytimmer;
         io.in(game?.idRooms).emit("turtle-next--yellow", resRunBytimmer);
         if (responTotal >= currentD) {
@@ -350,11 +406,14 @@ function socketListen(io) {
             } else if (!winner[game?.idRooms].WIN_III) {
               winner[game?.idRooms].WIN_III = 1;
               const res = {
+                idRooms: game?.idRooms,
                 WIN_I: winner[game?.idRooms].WIN_I,
                 WIN_II: winner[game?.idRooms].WIN_II,
                 WIN_III: winner[game?.idRooms].WIN_III,
               };
               io.in(game?.idRooms).emit("turtle-winner", res);
+              const req = cloneDeep(res);
+              handleTranferTokenGameTurtle(req);
             }
           }
           clearInterval(idInterval);
@@ -364,7 +423,6 @@ function socketListen(io) {
     const handleRunTurtlePink = (game) => {
       let responTotal = 0;
       let idInterval = setInterval(() => {
-        console.log(responTotal);
         const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
         responTotal = responTotal + resRunBytimmer;
         io.in(game?.idRooms).emit("turtle-next--pink", resRunBytimmer);
@@ -377,11 +435,14 @@ function socketListen(io) {
             } else if (!winner[game?.idRooms].WIN_III) {
               winner[game?.idRooms].WIN_III = 3;
               const res = {
+                idRooms: game?.idRooms,
                 WIN_I: winner[game?.idRooms].WIN_I,
                 WIN_II: winner[game?.idRooms].WIN_II,
                 WIN_III: winner[game?.idRooms].WIN_III,
               };
               io.in(game?.idRooms).emit("turtle-winner", res);
+              const req = cloneDeep(res);
+              handleTranferTokenGameTurtle(req);
             }
           }
           clearInterval(idInterval);
@@ -391,7 +452,6 @@ function socketListen(io) {
     const handleRunTurtleBlue = (game) => {
       let responTotal = 0;
       let idInterval = setInterval(() => {
-        console.log(responTotal);
         const resRunBytimmer = getRandomInt(minCurrent, maxCurrent);
         responTotal = responTotal + resRunBytimmer;
         io.in(game?.idRooms).emit("turtle-next--blue", resRunBytimmer);
@@ -404,17 +464,30 @@ function socketListen(io) {
             } else if (!winner[game?.idRooms].WIN_III) {
               winner[game?.idRooms].WIN_III = 3;
               const res = {
+                idRooms: game?.idRooms,
                 WIN_I: winner[game?.idRooms].WIN_I,
                 WIN_II: winner[game?.idRooms].WIN_II,
                 WIN_III: winner[game?.idRooms].WIN_III,
               };
               io.in(game?.idRooms).emit("turtle-winner", res);
+              const req = cloneDeep(res);
+              handleTranferTokenGameTurtle(req);
             }
           }
           clearInterval(idInterval);
         }
       }, [500]);
     };
+    const handleTrasferTokenWinner = (data) => {
+      const { amount, addressWallet } = data;
+      handleWinnerToken(
+        BLOCKCHAIN.ABI__GAMES__TURTLE,
+        BLOCKCHAIN.ADDRESS__SM__GAMES__TURTLE,
+        addressWallet,
+        amount
+      );
+    };
+
     socket.on("disconnect", () => {
       console.log("con nguoi ngat ket noi!!!!!!!!!!!!!!!!!! " + socket.id);
       if (io.sockets.adapter.rooms.get("turtle")) {
