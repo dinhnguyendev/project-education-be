@@ -1,20 +1,27 @@
 const { v4: uuidv4 } = require("uuid");
 const { random_item, listArray, initGameCaro, checkWin } = require("../until/Until");
 const _ = require("lodash");
-const { createGamesCaro, UpdateWinnerGamesCaro } = require("../until/CaroGames");
+const {
+  createGamesCaro,
+  UpdateWinnerGamesCaro,
+  createGameBroad,
+  updateCheckGameBroad,
+  deleteGameBroad,
+} = require("../until/CaroGames");
 const { createContractPeerGames } = require("../until/contract");
 const Web3 = require("web3");
 const { BLOCKCHAIN } = require("../constants/contants");
 const { handleWinnerToken, handleWinnerTokenTurtle } = require("../until/handleWinner");
 const { cloneDeep, clone } = require("lodash");
 const { UpdateWinnerGamesTurtle } = require("../until/TurtleGames");
+const { Check } = require("../until/CaroUntil");
 
 var Tx = require("ethereumjs-tx").Transaction;
 let gameBoard = {};
 let userPlayerList = [];
 let chatRoomCaro = {};
-const row = 50;
-const col = 50;
+const row = 40;
+const col = 40;
 let timer = {};
 const currentCheckSendToken = {};
 let currentTimer = {};
@@ -143,22 +150,11 @@ function socketListen(io) {
     });
     socket.on("update--check--caro", async (data) => {
       const idRooms = data.room;
-      if (gameBoard[`${idRooms}`] && gameBoard[`${idRooms}`][data.y][data.x] == null) {
-        gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
-        let responRoom = {
-          x: data.x,
-          y: data.y,
-          isX: data.isX,
-          phone: data.phone,
-        };
-        io.in(idRooms).emit("server--update-check", responRoom);
-        const phone = data.phone;
-        io.in(idRooms).emit("server--timer-IsSuccess", {
-          isBoolean: true,
-          phone,
-          room: idRooms,
-        });
-        const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
+
+      const games = await updateCheckGameBroad(data);
+      if (games) {
+        const gamesListArray = cloneDeep(games.gameBoard);
+        const isWin = Check(gamesListArray, row, col, data.y, data.x);
         if (isWin) {
           console.log("WINNER: " + data.id);
           console.log(data);
@@ -170,18 +166,78 @@ function socketListen(io) {
               coinWinner: amount,
             };
             io.in(data.idRooms).emit("server--winner--game-caro", res);
+            deleteGameBroad(data.idRooms);
             handleWinnerToken(
               BLOCKCHAIN.ABI__GAMES__CARO,
               BLOCKCHAIN.ADDRESS__SM__GAMES,
               data?.addressWallet,
-              amount
+              amount,
+              data?.idUser,
+              +data?.coin
             );
           }
+        } else {
+          let responRoom = {
+            x: data.x,
+            y: data.y,
+            isX: data.isX,
+            phone: data.phone,
+          };
+          io.in(idRooms).emit("server--update-check", responRoom);
+          const phone = data.phone;
+          io.in(idRooms).emit("server--timer-IsSuccess", {
+            isBoolean: true,
+            phone,
+            room: idRooms,
+          });
         }
       } else {
         const data = "Ô đã được đánh !";
         socket.emit("server--notification-message", data);
       }
+      // if (gameBoard[`${idRooms}`] && gameBoard[`${idRooms}`][data.y][data.x] == null) {
+      //   gameBoard[`${idRooms}`][data.y][data.x] = data.isX ? "x" : "o";
+      //   let responRoom = {
+      //     x: data.x,
+      //     y: data.y,
+      //     isX: data.isX,
+      //     phone: data.phone,
+      //   };
+      //   console.log("gameBoard[`${idRooms}`]");
+      //   console.log(gameBoard[`${idRooms}`]);
+      //   io.in(idRooms).emit("server--update-check", responRoom);
+      //   const phone = data.phone;
+      //   io.in(idRooms).emit("server--timer-IsSuccess", {
+      //     isBoolean: true,
+      //     phone,
+      //     room: idRooms,
+      //   });
+      //   const isWin = checkWin(gameBoard[data.room], row, col, data.y, data.x);
+      //   if (isWin) {
+      //     console.log("WINNER: " + data.id);
+      //     console.log(data);
+      //     const isUpdate = await UpdateWinnerGamesCaro(data);
+      //     if (isUpdate) {
+      //       const amount = +data?.totalCoin * 0.9;
+      //       const res = {
+      //         ...data,
+      //         coinWinner: amount,
+      //       };
+      //       io.in(data.idRooms).emit("server--winner--game-caro", res);
+      //       handleWinnerToken(
+      //         BLOCKCHAIN.ABI__GAMES__CARO,
+      //         BLOCKCHAIN.ADDRESS__SM__GAMES,
+      //         data?.addressWallet,
+      //         amount,
+      //         data?.idUser,
+      //         +data?.coin
+      //       );
+      //     }
+      //   }
+      // } else {
+      //   const data = "Ô đã được đánh !";
+      //   socket.emit("server--notification-message", data);
+      // }
     });
     socket.on("client--timer-update", (data) => {
       const idRooms = data.room;
@@ -190,14 +246,14 @@ function socketListen(io) {
           currenInterval: null,
         };
       }
-      currentTimer[idRooms] = 20;
+      currentTimer[idRooms] = 60;
       clearInterval(timer[idRooms].currenInterval);
       timer[idRooms].currenInterval = setInterval(() => {
         currentTimer[idRooms]--;
         io.in(idRooms).emit("server--time--watting", currentTimer[idRooms]);
         if (currentTimer[idRooms] == 0) {
           clearInterval(timer[idRooms].currenInterval);
-          currentTimer[idRooms] = 20;
+          currentTimer[idRooms] = 60;
           io.in(idRooms).emit("server--watting--end", data.phone);
         }
       }, 1000);
@@ -259,7 +315,7 @@ function socketListen(io) {
       }
     });
     const handleTurtleStartTimerGames = (game) => {
-      let curentTimer = 60;
+      let curentTimer = 120;
       let curentId = setInterval(() => {
         curentTimer = curentTimer - 1;
 

@@ -1,3 +1,5 @@
+const { cloneDeep } = require("lodash");
+
 function CheckRow(Board, row, column, r, c) {
   let countLeft = 0;
   let countRight = 0;
@@ -112,11 +114,13 @@ function CheckCross(Board, row, column, r, c) {
   else return false;
 }
 function Check(Board, row, column, r, c) {
+  console.log(Board);
+  const gamesBroad = cloneDeep(Board);
   if (
-    CheckRow(Board, row, column, r, c) ||
-    CheckColumn(Board, row, column, r, c) ||
-    CheckMaincross(Board, row, column, r, c) ||
-    CheckCross(Board, row, column, r, c)
+    CheckRow(gamesBroad, row, column, r, c) ||
+    CheckColumn(gamesBroad, row, column, r, c) ||
+    CheckMaincross(gamesBroad, row, column, r, c) ||
+    CheckCross(gamesBroad, row, column, r, c)
   ) {
     return true;
   }

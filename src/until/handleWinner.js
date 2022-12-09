@@ -1,9 +1,10 @@
 const Web3 = require("web3");
 const { hanldeLeaderboards } = require("./handleLeaderboards");
-const handleWinnerToken = async (abi, addressSM, addreceive, coin) => {
+const handleWinnerToken = async (abi, addressSM, addreceive, coin, idUser, coinWinner) => {
   const privateKeyssss = "bed5fcb69dddc5104c312475816a6ebd6e0464e62e83d64f1c4d3a1dc8bb8b10";
   const web3 = new Web3("wss://goerli.infura.io/ws/v3/f8b38abf525d46cd9c72d3604a533d49");
   const addressWallet = "0x1aD4f733F54758e5386cECa1DC3c310C175d2AA6";
+  // const addressWallet = "0x1aD4f733F54758e5386cECa1DC3c310C175d2AA6";
   //   const addreceive = "0xF60E4C205a8853D893c57B5C0649c2f0Df3cbbD3";
   const contract = new web3.eth.Contract(abi, addressSM);
   const amount = BigInt(coin * 1000000000000000000);
@@ -32,6 +33,7 @@ const handleWinnerToken = async (abi, addressSM, addreceive, coin) => {
     .sendSignedTransaction(signedTx.rawTransaction)
     .on("receipt", (receipt) => {
       console.log(receipt);
+      hanldeLeaderboards(idUser, coinWinner);
     })
     .on("error", (err) => {
       console.log("err");
