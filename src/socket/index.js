@@ -7,6 +7,7 @@ const {
   createGameBroad,
   updateCheckGameBroad,
   deleteGameBroad,
+  checkRoomsPlaying,
 } = require("../until/CaroGames");
 const { createContractPeerGames } = require("../until/contract");
 const Web3 = require("web3");
@@ -148,6 +149,15 @@ function socketListen(io) {
         }
       }
     });
+    socket.on("check--rooms--playing", async (rooms) => {
+      console.log(rooms);
+      const data = await checkRoomsPlaying(rooms);
+      console.log("data playuing");
+      console.log(data);
+      if (data) {
+        socket.emit("check--rooms--playing--success", true);
+      }
+    });
     socket.on("update--check--caro", async (data) => {
       const idRooms = data.room;
 
@@ -272,6 +282,7 @@ function socketListen(io) {
     socket.on("client--leave--room", (coin) => {
       socket.leave("caro" + coin);
     });
+
     socket.on("client--leave--room--by-id", (id) => {
       console.log("client--leave--room--by-id : " + id);
       socket.leave(id);

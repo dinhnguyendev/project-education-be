@@ -56,6 +56,20 @@ const deleteGameBroad = async (idRooms) => {
     });
   }
 };
+const checkRoomsPlaying = async (idRooms) => {
+  if (idRooms) {
+    const result = await GameBroad.findOne({
+      idRooms,
+    });
+    console.log("result");
+    console.log(result);
+    if (result) {
+      return result;
+    } else {
+      return false;
+    }
+  }
+};
 const updateCheckGameBroad = async (data) => {
   console.log(data);
   let games = await GameBroad.findOne({ idRooms: data?.idRooms });
@@ -92,4 +106,5 @@ module.exports = {
   updateCheckGameBroad,
   createGameBroad,
   deleteGameBroad,
+  checkRoomsPlaying,
 };
